@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kinh Thánh</title>
+  <style>
+    :root{--bg:#f7f7f8;--card:#fff;--accent:#2b6cb0}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#111}
+    header{background:var(--card);padding:14px 16px;box-shadow:0 1px 0 rgba(0,0,0,0.06);position:sticky;top:0;z-index:30}
+    .wrap{max-width:980px;margin:16px auto;padding:0 14px}
+    h1{margin:0;font-size:18px}
+    nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .btn{background:transparent;border:1px solid #ddd;padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer}
+    .btn.primary{background:var(--accent);color:white;border-color:transparent}
+    .grid{display:grid;grid-template-columns:repeat(1,1fr);gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:repeat(2,1fr)}}
+    .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 4px 14px rgba(10,10,20,0.04)}
+    .title{display:flex;align-items:center;justify-content:space-between}
+    .title h2{margin:0;font-size:16px}
+    .player{margin-top:10px}
+    iframe{width:100%;height:300px;border-radius:8px;border:0}
+    .small{font-size:13px;color:#555}
+    .search{display:flex;gap:8px;margin:12px 0}
+    input[type=search]{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd}
+    footer{max-width:980px;margin:24px auto;padding:0 14px 40px;color:#666;font-size:14px}
+    .onlyplayer{padding:10px}
+    .back{display:inline-block;margin-bottom:10px}
+    .download{margin-left:8px}
+<style>
+  /* Ẩn dòng mô tả / subtitle */
+  .subtitle,
+  .helper-text,
+  .notes-text {
+    display: none !important;
+  }
+
+  /* Ẩn chữ “Video Playlist” hoặc phần tiêu đề phụ */
+  .page-title small,
+  .title-note {
+    display: none !important;
+  }
+
+  /* Ẩn ô tìm sách + nút Xóa */
+  .search-bar,
+  input[type="search"],
+  #searchInput,
+  .clear-search {
+    display: none !important;
+  }
+
+  /* Ẩn nút “Danh mục” */
+  .menu-button,
+  .category-btn {
+    display: none !important;
+  }
+
+  /* Hide subtitle / helper / notes / footnote */
+  .small,
+  .subtitle,
+  .helper-text,
+  .notes-text,
+  footer { display: none !important; }
+
+  /* Hide search bar + buttons, but keep DOM to avoid JS errors */
+  .search { display: none !important; }
+
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Kinh Thánh</h1>
+    <div class="small">Giao diện: bản C (1 trang + chế độ trang riêng). Nhấn tên sách để mở chế độ "Trang riêng".</div>
+  </div>
+</header>
+<main class="wrap">
+  <div class="search">
+    <input id="q" type="search" placeholder="Tìm sách (ví dụ: Giăng, Thi-thiên, Rô-ma)...">
+    <button id="clear" class="btn">Xóa</button>
+    <button id="listview" class="btn primary">Danh mục</button>
+  </div>
+
+  <section id="index" aria-live="polite">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <button data-filter="all" class="btn">Tất cả</button>
+      <button data-filter="cuu" class="btn">Cựu Ước</button>
+      <button data-filter="tan" class="btn">Tân Ước</button>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <section id="page" style="display:none">
+    <a href="#" id="back" class="back btn">← Trở về</a>
+    <div id="pagecard" class="card onlyplayer"></div>
+  </section>
+
+</main>
+<footer>
+  <div class="wrap">Bản tạo tự động — nếu muốn chỉnh giao diện (ẩn chú thích, thay màu), tôi chỉnh cho bạn. Phiên bản phù hợp di động.</div>
+</footer>
+
+<script>
+// Dữ liệu sách (title, playlist url, group)
+const books = [
+  {title: 'Sáng-thế Ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JfHtmsbD1QNemsGzaAzjDG', group:'cuu'},
+  {title: 'Xuất Ê-díp-tô Ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62K9kTNPAocpQ4iQieXIjOvs', group:'cuu'},
+  {title: 'Lê-vi Ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Ip0W2lpCF5pBQ95k293tG8', group:'cuu'},
+  {title: 'Dân-số Ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JX6aPEAd72PuV-0RGI9tNF', group:'cuu'},
+  {title: 'Phục-truyền Luật-lệ Ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KhLcHhx7Op7IfuxVd5f2Hg', group:'cuu'},
+  {title: 'Giô-suê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jpe-mtS4S4mM2Hoqog4n14', group:'cuu'},
+  {title: 'Các Quan Xét', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62IVBTV0AA1X6_RyQUARJOEX', group:'cuu'},
+  {title: 'Ru tơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62IaevCfocGp-xcS1PFPeKur', group:'cuu'},
+  {title: 'I Sa-mu-ên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LV02Tmhf4YbKlrbsLKMFm0', group:'cuu'},
+  {title: 'II Sa-mu-ên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LirQCf0NXY5fem1fqbTPfZ', group:'cuu'},
+  {title: 'I Các Vua', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62IzTIxtNkJUWMtHswKW4KLL', group:'cuu'},
+  {title: 'II Các Vua', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LTdm-3pYtMi4ewY5iN_vKY', group:'cuu'},
+  {title: 'I Sử-ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jlb91hrih8NhyaaRF8U4vK', group:'cuu'},
+  {title: 'II Sử-ký', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LMsF72vYFxu5_PJ9SkgKhY', group:'cuu'},
+  {title: 'E-xơ-ra', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LelCtTIc5fd18CTag8i3JH', group:'cuu'},
+  {title: 'Nê-hê-mi', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jbbb6Ny4OlLSJyehptSMqm', group:'cuu'},
+  {title: 'Ê-xơ-tê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LxkdsKYbtZpBMrPNV7793W', group:'cuu'},
+  {title: 'Gióp', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LcPWm--Nq2FIG2K8v_7bfL', group:'cuu'},
+  {title: 'Thi-thiên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JtlOBMSZBxYBhGBOuQisKa', group:'cuu'},
+  {title: 'Châm-ngôn', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Lpb3lZRA5vxeH2d_G6OKx-', group:'cuu'},
+  {title: 'Truyền-đạo', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JyicWQLsr_v88v1ZKzGndp', group:'cuu'},
+  {title: 'Nhã-ca', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JPp239ofxbqLNdNPMyG0n8', group:'cuu'},
+  {title: 'Ê-sai', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JPH0tyqaIWQXPj05qVjIn4', group:'cuu'},
+  {title: 'Giê-rê-mi', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62J2ern9uLEMO8fDEy_5GLAW', group:'cuu'},
+  {title: 'Ca-thương', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JY8A96vPe-D8YdWWjb3Ho0', group:'cuu'},
+  {title: 'Ê-xê-chi-ên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LE8YSKGfyJ2IhJsh3OOMrk', group:'cuu'},
+  {title: 'Đa-ni-ên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KBylS83GMYHHCn_NiXEPcI', group:'cuu'},
+  {title: 'Ô-sê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62K88MIgcrLHhA2ZMdlLR9fZ', group:'cuu'},
+  {title: 'Giô-ên', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JODZZ3Pq_6-RXJjUqSTksZ', group:'cuu'},
+  {title: 'A-mốt', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LFWhSEpGRtIMXQOej4iYFD', group:'cuu'},
+  {title: 'Áp-đia', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Kwlv4GGPc2xwISe-tK5GB-', group:'cuu'},
+  {title: 'Giô-na', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KRvQgoIrZIATbbza1BH4xn', group:'cuu'},
+  {title: 'Mi-chê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JSoFxIf5xBO8bH7AOldWm9', group:'cuu'},
+  {title: 'Na-hum', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62ILhULLQobeArdPcMVsvKwr', group:'cuu'},
+  {title: 'Ha-ba-cúc', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62J2swq6s9UmEyv2ejP7vpsj', group:'cuu'},
+  {title: 'Sô-phô-ni', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62ID_2WddxSZLbYjShVaIbZc', group:'cuu'},
+  {title: 'A-ghê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JnecaU0jgV4y-DiQNHo1dq', group:'cuu'},
+  {title: 'Xa-cha-ri', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62L18w1T-IG9aKtUR3YGX5yM', group:'cuu'},
+  {title: 'Ma-la-chi', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jv6BmsqnwFUZOBxdJwTwRh', group:'cuu'},
+
+  {title: 'Ma-thi-ơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KyVdyLaP7KfrjhphCmR3Li', group:'tan'},
+  {title: 'Mác', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KqOom0XJjnhPZbdMNtciK4', group:'tan'},
+  {title: 'Lu-ca', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Ie-rSKjYTgN-OuJPaIwE2v', group:'tan'},
+  {title: 'Giăng', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62K2Pife7RFXaPfGxm_GnPe4', group:'tan'},
+  {title: 'Công-vụ các Sứ-đồ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62J-C6_2zdv3GD_CGRA9C1FF', group:'tan'},
+  {title: 'Rô-ma', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LKb_RBaE6cKdmiKzmKri1u', group:'tan'},
+  {title: 'I Cô-rinh-tô', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62L8CCpI_9AOOO5Gqu_hnjwd', group:'tan'},
+  {title: 'II Cô-rinh-tô', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JtA-h-THqjNzgX2OK8JQqW', group:'tan'},
+  {title: 'Ga-la-ti', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LadFN3JblU96KJObgmTNcd', group:'tan'},
+  {title: 'Ê-phê-sô', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LlRbWjlMZeMvoTNJz5adfS', group:'tan'},
+  {title: 'Phi-líp', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62IacI910E11D78o8kcnWbCD', group:'tan'},
+  {title: 'Cô-lô-se', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62InUKe4CMgMRLtS_07rmnCJ', group:'tan'},
+  {title: 'I Tê-sa-lô-ni-ca', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62J7zjA_sPx1scLPY9MST3mb', group:'tan'},
+  {title: 'II Tê-sa-lô-ni-ca', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JzWnY3cLYjyVabrv94SQHr', group:'tan'},
+  {title: 'I Ti-mô-thê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JFIjAv45wTvGdbNlEH40Mz', group:'tan'},
+  {title: 'II Ti-mô-thê', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jh32OOwUuA8C0YWTVycFnO', group:'tan'},
+  {title: 'Tít', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JGlIAlHWy_7xEMjPqiKJOj', group:'tan'},
+  {title: 'Phi-lê-môn', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LQHBWdEDxRoV8s1q8A3DLH', group:'tan'},
+  {title: 'Hê-bơ-rơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62InnnXooukt-d_cNVK56M0b', group:'tan'},
+  {title: 'Gia-cơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KEHjhCp-XflfF3Wj7bLCkO', group:'tan'},
+  {title: 'I Phi-e-rơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62Jg7w8c0nE6JRa2juHbR7Xf', group:'tan'},
+  {title: 'II Phi-e-rơ', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LkVA70hNRYIV-Blo_C3pd2', group:'tan'},
+  {title: 'I Giăng', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62LBoMXMfGjvbsQz1j9rA6G4', group:'tan'},
+  {title: 'II Giăng', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62KpaYh-cbSmxFYtkCclDusT', group:'tan'},
+  {title: 'III Giăng', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62I8yNwNE0gXWW8sjVFaq_15', group:'tan'},
+  {title: 'Giu-đe', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62JYC5Szgkc-nt4BiH1EJ5ZJ', group:'tan'},
+  {title: 'Khải-huyền', url: 'https://www.youtube.com/embed/videoseries?list=PLArPHyle_62IxK4YzEcsMR8uRs8MqDbmH', group:'tan'}
+];
+
+const grid = document.getElementById('grid');
+const q = document.getElementById('q');
+const clear = document.getElementById('clear');
+const back = document.getElementById('back');
+const page = document.getElementById('page');
+const index = document.getElementById('index');
+const pagecard = document.getElementById('pagecard');
+
+function renderList(filter){
+  grid.innerHTML='';
+  const v = (q.value||'').toLowerCase();
+  books.forEach((b,i)=>{
+    if(filter && filter!=='all' && b.group!==filter) return;
+    if(v && !b.title.toLowerCase().includes(v)) return;
+    const el = document.createElement('div'); el.className='card';
+    el.innerHTML = `<div class="title"><h2>${(i+1).toString().padStart(2,'0')}. ${b.title}</h2>
+      <div><button class="btn" data-i="${i}">Mở</button></div></div>
+      <div class="small">Nhấn tiêu đề để xem trang riêng.</div>
+      <div class="player"><iframe loading="lazy" src="${b.url}" allowfullscreen></iframe></div>`;
+    el.querySelector('h2').style.cursor='pointer';
+    el.querySelector('h2').addEventListener('click',()=>openPage(i));
+    el.querySelector('button').addEventListener('click',()=>{ location.hash = 'book='+i; showBook(i); });
+    grid.appendChild(el);
+  });
+}
+
+function openPage(i){ location.hash = 'book='+i; showBook(i); }
+
+function showBook(i){
+  const b = books[i];
+  index.style.display='none'; page.style.display='block';
+  pagecard.innerHTML = `<h2>${(i+1).toString().padStart(2,'0')}. ${b.title}</h2>
+    <div class="small">Chế độ trang riêng — không chữ thừa.</div>
+    <div style="margin-top:10px">
+  <iframe id="player"
+    src="${b.url}&autoplay=1&loop=1&rel=0"
+    allow="autoplay"
+    allowfullscreen>
+  </iframe>
+</div>
+
+    <div style="margin-top:8px"><button id="dl" class="btn">Tải trang này (HTML)</button>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+  <button id="readall" class="btn primary">▶ Đọc toàn bộ sách</button>
+  <button id="dl" class="btn">Tải trang này (HTML)</button>
+  <a class="btn download"
+     href="${b.url.replace('embed/','')}"
+     target="_blank">
+     Mở trên YouTube
+  </a>
+</div>
+;
+  document.getElementById('dl').addEventListener('click',()=>downloadSingle(b));
+document.getElementById('readall').addEventListener('click', () => {
+  const iframe = document.getElementById('player');
+
+  // phát liên tục toàn bộ playlist từ đầu
+  iframe.src = b.url + '&autoplay=1&loop=1&rel=0';
+});
+
+}
+
+function downloadSingle(b){
+  const html = `<!doctype html>\n<html lang="vi">\n<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${b.title}</title></head>\n<body style="margin:0;font-family:Arial,Helvetica,sans-serif">\n  <main style="max-width:900px;margin:12px auto;padding:12px">\n    <h1>${b.title}</h1>\n    <iframe width="100%" height="480" src="${b.url}" frameborder="0" allowfullscreen></iframe>\n  </main>\n</body>\n</html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = b.title.replace(/[^a-z0-9\-]/gi,'_') + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// handlers
+q.addEventListener('input',()=>renderList(document.querySelector('[data-filter].active')?.dataset?.filter||'all'));
+clear.addEventListener('click',()=>{ q.value=''; renderList('all'); });
+
+document.querySelectorAll('[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); renderList(btn.dataset.filter);
+  });
+});
+
+back.addEventListener('click',(e)=>{ e.preventDefault(); location.hash=''; page.style.display='none'; index.style.display='block'; });
+
+// hash routing
+function parseHash(){
+  const h = location.hash.replace('#','');
+  if(!h) { page.style.display='none'; index.style.display='block'; return; }
+  const m = h.match(/book=(\d+)/);
+  if(m){ const i = Number(m[1]); showBook(i); }
+}
+window.addEventListener('hashchange',parseHash);
+
+// init
+renderList('all'); parseHash();
+</script>
+</body>
+</html>
