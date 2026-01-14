@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Kinh Thánh</title>
+  <title>KINH THÁNH__CỰU ƯỚC & TÂN ƯỚC</title>
   <style>
     :root{--bg:#f7f7f8;--card:#fff;--accent:#2b6cb0}
     *{box-sizing:border-box}
@@ -207,33 +207,10 @@ function showBook(i){
   index.style.display='none'; page.style.display='block';
   pagecard.innerHTML = `<h2>${(i+1).toString().padStart(2,'0')}. ${b.title}</h2>
     <div class="small">Chế độ trang riêng — không chữ thừa.</div>
-    <div style="margin-top:10px">
-  <iframe id="player"
-    src="${b.url}&autoplay=1&loop=1&rel=0"
-    allow="autoplay"
-    allowfullscreen>
-  </iframe>
-</div>
-
+    <div style="margin-top:10px"><iframe src="${b.url}" allowfullscreen></iframe></div>
     <div style="margin-top:8px"><button id="dl" class="btn">Tải trang này (HTML)</button>
-    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-  <button id="readall" class="btn primary">▶ Đọc toàn bộ sách</button>
-  <button id="dl" class="btn">Tải trang này (HTML)</button>
-  <a class="btn download"
-     href="${b.url.replace('embed/','')}"
-     target="_blank">
-     Mở trên YouTube
-  </a>
-</div>
-;
+    <a class="btn download" href="${b.url.replace('embed/','')||b.url}" target="_blank">Mở trên YouTube</a></div>`;
   document.getElementById('dl').addEventListener('click',()=>downloadSingle(b));
-document.getElementById('readall').addEventListener('click', () => {
-  const iframe = document.getElementById('player');
-
-  // phát liên tục toàn bộ playlist từ đầu
-  iframe.src = b.url + '&autoplay=1&loop=1&rel=0';
-});
-
 }
 
 function downloadSingle(b){
